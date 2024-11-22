@@ -215,7 +215,10 @@ import {
 	containsSerializedCC,
 	isCommandRequest,
 } from "@zwave-js/serial/serialapi";
-import { type FileSystem } from "@zwave-js/shared/bindings";
+import {
+	type ReadFile,
+	type ReadFileSystemInfo,
+} from "@zwave-js/shared/bindings";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "../_version.js";
 import { type ZWaveNodeBase } from "../node/mixins/00_Base.js";
 import { type NodeWakeup } from "../node/mixins/30_Wakeup.js";
@@ -603,7 +606,7 @@ function assertValidCCs(container: ContainsCC): void {
 
 function wrapLegacyFSDriverForCacheMigrationOnly(
 	legacy: import("@zwave-js/core/traits").FileSystem,
-): FileSystem {
+): ReadFileSystemInfo & ReadFile {
 	// This usage only needs readFile and checking if a file exists
 	// Every other usage will throw!
 	return {
@@ -628,31 +631,6 @@ function wrapLegacyFSDriverForCacheMigrationOnly(
 			}
 		},
 		readDir(_path) {
-			return Promise.reject(
-				new Error("Not implemented for the legacy FS driver"),
-			);
-		},
-		deleteDir(_path) {
-			return Promise.reject(
-				new Error("Not implemented for the legacy FS driver"),
-			);
-		},
-		ensureDir(_path) {
-			return Promise.reject(
-				new Error("Not implemented for the legacy FS driver"),
-			);
-		},
-		open(_path, _flags) {
-			return Promise.reject(
-				new Error("Not implemented for the legacy FS driver"),
-			);
-		},
-		writeFile(_path, _data) {
-			return Promise.reject(
-				new Error("Not implemented for the legacy FS driver"),
-			);
-		},
-		copyFile(_source, _dest) {
 			return Promise.reject(
 				new Error("Not implemented for the legacy FS driver"),
 			);
@@ -1495,9 +1473,7 @@ export class Driver extends TypedEventEmitter<DriverEventCallbacks>
 
 			// Try to create the cache directory. This can fail, in which case we should expose a good error message
 			try {
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
 				if (this._options.storage.driver) {
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
 					await this._options.storage.driver.ensureDir(this.cacheDir);
 				} else {
 					await this.bindings.fs.ensureDir(this.cacheDir);
@@ -1691,10 +1667,8 @@ export class Driver extends TypedEventEmitter<DriverEventCallbacks>
 					this.controller.homeId,
 					this._networkCache,
 					this._valueDB,
-					// eslint-disable-next-line @typescript-eslint/no-deprecated
 					this._options.storage.driver
 						? wrapLegacyFSDriverForCacheMigrationOnly(
-							// eslint-disable-next-line @typescript-eslint/no-deprecated
 							this._options.storage.driver,
 						)
 						: this.bindings.fs,
